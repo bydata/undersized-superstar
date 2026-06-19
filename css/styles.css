@@ -1,0 +1,81 @@
+:root {
+  --bs-body-bg: #FFFFFF;
+  --color-text: #111111;
+  --color-orange: #FE4E00;
+  --color-yellow: #FFAE0399;
+}
+
+body {
+  font-family: 'Instrument Sans', Arial, sans-serif;
+  color: #111111;
+  font-weight: 300;
+}
+
+h1 {
+    font-family: 'Instrument Serif', serif;
+}
+
+p {
+    font-size: 1.1em;
+}
+
+em {
+  font-weight: 600;
+  font-style: normal;
+}
+
+.highlighted-text {
+  font-weight: 600;
+  background-color: var(--color-darkgrey);
+  color: white;
+  padding: 2px 4px;
+  border-radius: 5px;
+}
+
+.highlighted-text-orange {
+  background-color: var(--color-orange);
+}
+.highlighted-text-yellow {
+  background-color: var(--color-yellow);
+  color: var(--color-text);
+}
+.highlighted-text-orange-border {
+  color: var(--color-text);
+  border: 2px solid var(--color-orange); 
+}
+
+
+#quarto-document-content > p:nth-child(3) {
+    width: 80%
+}
+
+/* Container Layout */
+.container {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 40px;
+    max-width: 1100px;
+    background: #ffffff;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.text-column {
+    flex: 1.5; 
+}
+
+.image-column {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.image-column img {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    object-fit: cover;
+}

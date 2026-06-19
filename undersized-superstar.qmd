@@ -1,0 +1,477 @@
+---
+title: "The Undersized Superstar?"
+execute: 
+  warning: false
+  message: false
+css:
+  - css/styles.css
+format:
+  closeread-html:
+    cr-section:
+      layout: "sidebar-left"
+    cr-style:
+      narrative-font-family: "Instrument Sans"
+      section-background-color: "#FFFFFF"
+    include-in-header:
+        text: |
+            <link rel="icon" type="image/x-icon" href="media/logo.png">
+
+---
+
+
+:::{.container}
+:::{.text-column}
+Jalen Brunson was the engine of the Knicks' historic 2026 championship run, earning NBA Finals MVP honors while leading the postseason in total scoring with 28.4 points per game. In the decisive Game 5, he score 45 points in total and scoring 13 straight in the fourth quarter to rally the Knicks from a double-digit deficit and secure their first title in 53 years.
+:::
+:::{.image-column}
+<img src="media/brunson-free.png" alt="Jalen Brunson, a basketball professional, in a NY Knicks jersey">
+:::
+:::
+
+
+```{r setup}
+library(tidyverse)
+library(ggtext)
+library(here)
+library(haven)
+
+base_path <- here("undersized-brunson")
+
+```
+
+```{r theme}
+
+custom_theme <- function() {
+    theme_minimal(base_family = "Instrument Sans", paper = "white", ink = "grey30") +
+        theme(
+            plot.title = element_text(color = "black"),
+            panel.grid.major.x = element_blank(),
+            panel.grid.major.y = element_line(),
+            panel.grid.minor = element_blank(),
+            axis.line.x = element_line(linewidth = 0.25, color = "grey20")
+        )
+}
+
+theme_set(custom_theme())
+
+```
+
+
+```{r load-nba-player-bio, cache=TRUE}
+
+#' Source: https://www.nba.com/stats/players/bio?SeasonType=Regular+Season
+
+df_nba_bio <- read_tsv(here(base_path, "data", "nba-bio-202526.tsv"))
+
+feet_to_cm <- 30.48
+inch_to_cm <- 2.54
+
+df_nba_height <- df_nba_bio |> 
+    transmute(
+        Player, Team, 
+        height_in = Height,
+        height_cm = round(
+            as.numeric(str_extract(Height, "^\\d")) * feet_to_cm +
+            as.numeric(str_extract(Height, "\\d{1,2}$")) * inch_to_cm
+        )
+    )
+
+```
+
+
+```{r brunson-height}
+
+brunson_height <- df_nba_height |> 
+    filter(Player == "Jalen Brunson") |> 
+    pull(height_cm)
+
+smaller_than_brunson <- df_nba_height |> 
+    filter(height_cm < brunson_height) |>
+    nrow()
+taller_than_brunson <- df_nba_height |> 
+    filter(height_cm > brunson_height) |>
+    nrow()
+
+```
+
+```{r}
+# df_nba_height |> 
+#     ggplot(aes(height_cm)) +
+#     geom_density(
+#         col = "purple",
+#         fill = alpha("purple", 0.1),
+#         linewidth = 0.8
+#     ) +
+#     annotate(
+#         "point",
+#         x = brunson_height,
+#         y = 0.03
+#     ) +
+#     annotate(
+#         "segment",
+#         x = brunson_height,
+#         xend = brunson_height,
+#         y = 0, 
+#         yend = 0.03,
+#         linetype = "dashed"
+#     )
+
+```
+
+
+
+
+
+```{r}
+
+#' Source: NHANES 2021-23 Examination Data
+#' https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Examination&Cycle=2021-2023
+#' https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Demographics&Cycle=2021-2023
+
+# Examination data
+url_cdc_data_height <- "https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2021/DataFiles/BMX_L.xpt"
+df_cdc_height <- haven::read_xpt(url_cdc_data_height)
+
+# Demographics - keep only adult, male respondents
+url_cdc_data_demo <- "https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2021/DataFiles/DEMO_L.xpt"
+df_cdc_demo <- haven::read_xpt(url_cdc_data_demo)
+df_cdc_demo_male <- df_cdc_demo |> 
+    filter(RIAGENDR == 1, RIDAGEYR >= 18) |> # 1 = male 
+    select(SEQN, RIAGENDR, WTMEC2YR)
+
+
+df_cdc_height_male <- df_cdc_height |> 
+    inner_join(df_cdc_demo_male, by = join_by(SEQN)) |> 
+    # keep valid measurements
+    filter(!is.na(BMXHT), is.na(BMIHT)) |> 
+    select(SEQN, RIAGENDR, WTMEC2YR, BMXHT) |> 
+    arrange(-BMXHT)
+
+
+```
+
+
+```{r echo=FALSE, include=FALSE}
+mean(df_cdc_height_male$BMXHT)
+mean_height_cm <- round(weighted.mean(df_cdc_height_male$BMXHT, w = df_cdc_height_male$WTMEC2YR))
+mean_height_ft <- mean(df_cdc_height_male$BMXHT) %/% feet_to_cm
+mean_height_rest_in <- round(mean(df_cdc_height_male$BMXHT) %% feet_to_cm / inch_to_cm)
+# message(sprintf("%d ft %d in", mean_height_ft, mean_height_rest_in))
+
+
+min(df_cdc_height_male$BMXHT)
+quantile(df_cdc_height_male$BMXHT, probs = c(0.05, 0.5, 0.63, 0.8, 0.9, 0.95, 0.96, 0.97, 0.99))
+
+sum(df_cdc_height_male$WTMEC2YR)
+```
+
+
+:::{.cr-section}
+
+
+```{r}
+min_histo_height <- pmin(min(df_nba_height$height_cm), min(df_cdc_height_male$BMXHT))
+max_histo_height <- pmax(max(df_nba_height$height_cm), max(df_cdc_height_male$BMXHT))
+
+
+p_base <- ggplot() +
+    scale_y_continuous(
+        labels = scales::label_percent(),
+        expand = expansion(mult = c(0, 0.05))) +
+    scale_fill_manual(values = c("TRUE" = "#FE4E00ee", "FALSE" = "#FFAE0399"),
+        aesthetics = c("fill", "color")) +
+    coord_cartesian(
+        xlim = c(min_histo_height, max_histo_height),
+        clip = "off"
+    ) +
+    labs(
+        x = "Height in cm",
+        y = NULL
+    )
+
+# p_histo_men <- df_cdc_height_male |> 
+#     ggplot(aes(BMXHT, weight = WTMEC2YR)) +
+#     geom_histogram(
+#         aes(
+#             y = after_stat(density),
+#             fill = BMXHT > brunson_height
+#         ),
+#         binwidth = 2.5,
+#         show.legend = FALSE
+#     ) +
+#     scale_y_continuous(
+#         labels = scales::label_percent(),
+#         expand = expansion(mult = c(0, 0.05))) +
+#     scale_fill_manual(values = c("TRUE" = "#FE4E00ee", "FALSE" = "#FFAE0399")) +
+#     coord_cartesian(
+#         xlim = c(min_histo_height, max_histo_height),
+#         ylim = c(0, 0.15)
+#     ) +
+#     labs(
+#         x = "Height in cm",
+#         y = NULL
+#     )
+
+p_init_brunson <- p_base + 
+    annotate(
+        "point",
+        x = brunson_height,
+        y = 0.055
+    ) +
+    annotate(
+        "segment",
+        x = brunson_height,
+        xend = brunson_height,
+        y = 0, 
+        yend = 0.055,
+        linetype = "dashed"
+    ) +
+    annotate(
+        "richtext",
+        x = brunson_height,
+        y = 0.055,
+        label = "<img src='media/brunson-circle.png' width=70>",
+        vjust = 0,
+        family = "Instrument Sans SemiBold",
+        label.size = 0, fill = NA
+    )
+
+
+p_histo_men <- p_base + 
+    geom_histogram(
+        data = df_cdc_height_male,
+        aes(
+            BMXHT, weight = WTMEC2YR,
+            y = after_stat(density),
+            fill = "FALSE"
+        ),
+        binwidth = 2.5,
+        show.legend = FALSE
+    )
+
+p_histo_men_brunson <- p_base + 
+    geom_histogram(
+        data = df_cdc_height_male,
+        aes(
+            BMXHT, weight = WTMEC2YR,
+            y = after_stat(density),
+            fill = after_stat(x) > brunson_height
+        ),
+        binwidth = 2.5,
+        show.legend = FALSE
+    ) +
+    annotate(
+        "point",
+        x = brunson_height,
+        y = 0.055
+    ) +
+    annotate(
+        "segment",
+        x = brunson_height,
+        xend = brunson_height,
+        y = 0, 
+        yend = 0.055,
+        linetype = "dashed"
+    ) +
+    annotate(
+        "richtext",
+        x = brunson_height,
+        y = 0.055,
+        label = "<img src='media/brunson-circle.png' width=40>",
+        vjust = 0,
+        family = "Instrument Sans SemiBold",
+        label.size = 0, fill = NA
+    )
+
+
+p_histo_men_brunson_avg <- p_histo_men_brunson + 
+    annotate(
+        "point",
+        x = mean_height_cm,
+        y = 0.055
+    ) +
+    annotate(
+        "segment",
+        x = mean_height_cm,
+        xend = mean_height_cm,
+        y = 0, 
+        yend = 0.055,
+        linetype = "dashed"
+    ) +
+    annotate(
+        "richtext",
+        x = mean_height_cm,
+        y = 0.055,
+        label = "Average male height in the US",
+        vjust = 0,
+        family = "Instrument Sans SemiBold",
+        label.size = 0, fill = NA
+    ) +
+    annotate(
+        "point",
+        x = brunson_height,
+        y = 0.055
+    ) +
+    annotate(
+        "segment",
+        x = brunson_height,
+        xend = brunson_height,
+        y = 0, 
+        yend = 0.055,
+        linetype = "dashed"
+    ) +
+    annotate(
+        "richtext",
+        x = brunson_height,
+        y = 0.055,
+        label = "<img src='media/brunson-circle.png' width=40>",
+        vjust = 0,
+        family = "Instrument Sans SemiBold",
+        label.size = 0, fill = NA
+    )
+
+
+p_histo_nba <- p_base + 
+    geom_histogram(
+        data = df_nba_height,
+        aes(
+            x = height_cm,
+            y = after_stat(density),
+            fill = after_stat(x) > brunson_height
+        ),
+        binwidth = 2.5,
+        show.legend = FALSE
+    ) 
+
+```
+
+:::{#cr-wsj}
+<img src="media/wsj.png" width="500" />
+:::
+
+:::{#cr-wsj-highlighted}
+<img src="media/wsj-highlighted.png" width="500" />
+:::
+
+:::{#cr-hero-image}
+<img src="media/brunson-free.png" height="500" />
+:::
+
+:::{#cr-init-brunson}
+
+```{r}
+p_init_brunson
+```
+:::
+
+:::{#cr-nba-histo}
+
+```{r}
+p_histo_nba
+```
+:::
+
+:::{#cr-men-histo}
+```{r}
+p_histo_men
+```
+:::
+
+:::{#cr-men-histo-brunson}
+```{r}
+p_histo_men_brunson
+```
+:::
+
+:::{#cr-men-histo-brunson-avg}
+```{r}
+p_histo_men_brunson_avg
+```
+:::
+
+
+:::{#cr-men-nba-comparison-density}
+```{r}
+sd_height_cm = sd(df_cdc_height_male$BMXHT)
+
+x <- seq(mean_height_cm - 4 * sd_height_cm, mean_height_cm + 4 * sd_height_cm, length.out = 100)
+y <- dnorm(x, mean = 175, sd = sd_height_cm)
+df <- data.frame(x = x, y = y)
+
+
+p_base + 
+    geom_area(
+        data = df,
+        aes(x = x, y = y, fill = "FALSE", col = "FALSE"),
+        alpha = 0.4, linewidth = 1
+    ) +
+    annotate(
+        "point",
+        x = brunson_height,
+        y = 0.04
+    ) +
+    annotate(
+        "segment",
+        x = brunson_height,
+        xend = brunson_height,
+        y = 0, 
+        yend = 0.04,
+        linetype = "dashed"
+    ) +
+    annotate(
+        "richtext",
+        x = brunson_height,
+        y = 0.04,
+        label = "<img src='media/brunson-circle.png' width=40>",
+        vjust = 0,
+        family = "Instrument Sans SemiBold",
+        label.size = 0, fill = NA
+    ) +
+    coord_cartesian(
+        xlim = c(min_histo_height, max_histo_height),
+        clip = "off") +
+    guides(fill = "none", color = "none") +
+    theme(
+        # axis.text.y = element_blank()
+    )
+
+```
+:::
+
+
+
+
+
+@cr-wsj But the standfirst of this [Wall Street Journal article](https://www.wsj.com/sports/basketball/jalen-brunson-new-york-knicks-nba-finals-ac6b287d?st=LPtr5c) struck me. 
+
+@cr-wsj-highlighted Brunson, an <em class="highlighted-text highlighted-text-orange-border">undersized superstar?</em>
+
+@cr-init-brunson According to official NBA figures, Jalen Brunson is 6 ft 2" / 188 cm tall.
+
+@cr-nba-histo In the NBA, where the average player is `r round(mean(df_nba_height$height_cm))` cm tall, he often appears small. In fact, only `r smaller_than_brunson` NBA players in the 2025-26 NBA regular season are <em class="highlighted-text highlighted-text-yellow">shorter than him</em>.
+
+On the other hand, the vast majority, `r round(taller_than_brunson / nrow(df_nba_height) * 100)` %, is <em class="highlighted-text highlighted-text-orange">taller than Brunson</em>.
+
+Stephen Curry, Ja Morant, Trae Young, Tyrese Maxex and 
+`r nrow(df_nba_height[df_nba_height$height_cm == 188,] ) - 4` other players are also 6 ft 2".
+
+@cr-men-histo But among men in the US?
+
+The average standing height is 5 ft 9" or 175 cm.
+
+@cr-men-histo-brunson Which places Brunson in the<br><em class="highlighted-text highlighted-text-orange">96th percentile</em>.<br><br>Only 4 % of male adults in the U.S. are taller than him.
+
+@cr-men-histo-brunson-avg He is <em>`r brunson_height - round(weighted.mean(df_cdc_height_male$BMXHT, w = df_cdc_height_male$WTMEC2YR))` cm taller then the average</em> American male adult.
+
+Remember, at the same time he is <em>`r round(mean(df_nba_height$height_cm)) - brunson_height` cm smaller than the average NBA player</em>.
+
+@cr-men-nba-comparison-density
+
+:::
+
+
+### Sources
+
+* NBA players: NBA.com (as of 2026-06-14)
+* US male standing height: NHANES 2021-23 [Examination Data](https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Examination&Cycle=2021-2023) and [Demographics](https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Demographics&Cycle=2021-2023)
+* Photo Jalen Brunson: Erik Drost, CC BY 2.0 (via [Wikipedia](https://de.wikipedia.org/wiki/Jalen_Brunson#/media/Datei:Jalen_Brunson_2023_(cropped).jpg))
