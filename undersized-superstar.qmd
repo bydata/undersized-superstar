@@ -3,6 +3,7 @@ title: "The Undersized Superstar?"
 execute: 
   warning: false
   message: false
+output-file: index.html
 css:
   - css/styles.css
 format:
