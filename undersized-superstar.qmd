@@ -470,7 +470,7 @@ p_nba_finals_lineup_brunson_only <- df_nba_finals_lineup |>
         "richtext",
         x = brunson_height,
         y = 1,
-        label = "<img src='media/brunson-circle.png' width=20>",
+        label = "<img src='media/brunson-circle.png' width=26>",
         vjust = 0.5,
         family = "Instrument Sans SemiBold",
         label.size = 0, fill = NA
@@ -479,7 +479,7 @@ p_nba_finals_lineup_brunson_only <- df_nba_finals_lineup |>
     coord_cartesian(
         xlim = c(min_nba_finals_lineup_height, max_nba_finals_lineup_height),
         ylim = c(0.8, 1.8)) +
-    guides(fill = guide_legend(override.aes = list("size" = 3))) +
+    guides(fill = guide_legend(override.aes = list("size" = 5))) +
     labs(x = "Height in cm") +
     theme(
         axis.title.y = element_blank(),
@@ -502,7 +502,7 @@ p_nba_finals_lineup_brunson_only +
     ggdist::geom_swarm(
         data = ~filter(., Player != "Jalen Brunson"),
         aes(fill = Team, group = 1), 
-        shape = 21, color = "grey2", linewidth = 0.25, dotsize = 3, 
+        shape = 21, color = "grey2", linewidth = 0.25, dotsize = 5, 
         alpha = 0.9
     )
 ```
