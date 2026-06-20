@@ -450,8 +450,8 @@ p_base +
 ```
 :::
 
-:::{#cr-nba-finals}
-```{r nba-finals-starting-lineups}
+:::{#cr-nba-finals-starting-lineups-brunson-only}
+```{r nba-finals-starting-lineups-brunson-only}
 
 starting_lineups <- list(
     "Knicks" = c("Jalen Brunson", "Josh Hart", "Mikal Bridges", "OG Anunoby", "Karl-Anthony Towns"),
@@ -461,13 +461,11 @@ starting_lineups <- list(
 df_nba_finals_lineup <- df_nba_height |> 
     filter(Player %in% reduce(starting_lineups, c))
 
-df_nba_finals_lineup |> 
+min_nba_finals_lineup_height <- min(df_nba_finals_lineup$height_cm)
+max_nba_finals_lineup_height <- max(df_nba_finals_lineup$height_cm)
+
+p_nba_finals_lineup_brunson_only <- df_nba_finals_lineup |> 
     ggplot(aes(height_cm, y = 1)) +
-    ggdist::geom_swarm(
-        aes(fill = Team, group = 1), 
-        shape = 21, color = "grey2", linewidth = 0.25, dotsize = 3, 
-        alpha = 0.9
-    ) +
     annotate(
         "richtext",
         x = brunson_height,
@@ -478,7 +476,9 @@ df_nba_finals_lineup |>
         label.size = 0, fill = NA
     ) +
     scale_fill_manual(values = c("NYK" = "#006BB6", "SAS" = "#c4ced4")) +
-    coord_cartesian(ylim = c(0.8, 1.8)) +
+    coord_cartesian(
+        xlim = c(min_nba_finals_lineup_height, max_nba_finals_lineup_height),
+        ylim = c(0.8, 1.8)) +
     guides(fill = guide_legend(override.aes = list("size" = 3))) +
     labs(x = "Height in cm") +
     theme(
@@ -491,9 +491,23 @@ df_nba_finals_lineup |>
         legend.background = element_rect(color = NA, fill = "white")
     )
 
+p_nba_finals_lineup_brunson_only
 
 ```
 :::
+
+:::{#cr-nba-finals-starting-lineups-brunson-and-others}
+```{r nba-finals-starting-lineups-brunson-and-others}
+p_nba_finals_lineup_brunson_only +
+    ggdist::geom_swarm(
+        data = ~filter(., Player != "Jalen Brunson"),
+        aes(fill = Team, group = 1), 
+        shape = 21, color = "grey2", linewidth = 0.25, dotsize = 3, 
+        alpha = 0.9
+    )
+```
+:::
+
 
 @cr-wsj But one phrase in the standfirst of this [Wall Street Journal article](https://www.wsj.com/sports/basketball/jalen-brunson-new-york-knicks-nba-finals-ac6b287d?st=LPtr5c) struck me. 
 
@@ -516,7 +530,9 @@ Stephen Curry, Ja Morant, Trae Young, Tyrese Maxex and
 
 @cr-men-nba-comparison-density Remember, at the same time he is <em>`r round(mean(df_nba_height$height_cm)) - brunson_height` cm smaller than the average NBA player</em>.
 
-@cr-nba-finals In Game 5 of the 2026 NBA Finals, he was the shortest player in the Knicks and Spurs starting line-ups.<br><br>Yet, he turned out to be the most influential player of the deciding game.
+@cr-nba-finals-starting-lineups-brunson-only
+
+@cr-nba-finals-starting-lineups-brunson-and-others In Game 5 of the 2026 NBA Finals, he was the shortest player in the Knicks and Spurs starting line-ups.<br><br>Yet, he turned out to be the most influential player of the deciding game.
 
 :::
 
