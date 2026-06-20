@@ -34,8 +34,7 @@ library(tidyverse)
 library(ggtext)
 library(here)
 library(haven)
-
-base_path <- here("undersized-brunson")
+library(Hmisc)
 
 ```
 
@@ -61,7 +60,7 @@ theme_set(custom_theme())
 
 #' Source: https://www.nba.com/stats/players/bio?SeasonType=Regular+Season
 
-df_nba_bio <- read_tsv(here(base_path, "data", "nba-bio-202526.tsv"))
+df_nba_bio <- read_tsv(here("data", "nba-bio-202526.tsv"))
 
 feet_to_cm <- 30.48
 inch_to_cm <- 2.54
@@ -94,33 +93,6 @@ taller_than_brunson <- df_nba_height |>
 
 ```
 
-```{r}
-# df_nba_height |> 
-#     ggplot(aes(height_cm)) +
-#     geom_density(
-#         col = "purple",
-#         fill = alpha("purple", 0.1),
-#         linewidth = 0.8
-#     ) +
-#     annotate(
-#         "point",
-#         x = brunson_height,
-#         y = 0.03
-#     ) +
-#     annotate(
-#         "segment",
-#         x = brunson_height,
-#         xend = brunson_height,
-#         y = 0, 
-#         yend = 0.03,
-#         linetype = "dashed"
-#     )
-
-```
-
-
-
-
 
 ```{r}
 
@@ -147,17 +119,37 @@ df_cdc_height_male <- df_cdc_height |>
     select(SEQN, RIAGENDR, WTMEC2YR, BMXHT) |> 
     arrange(-BMXHT)
 
+mean_height_cm <- weighted.mean(df_cdc_height_male$BMXHT, w = df_cdc_height_male$WTMEC2YR)
+mean_height_ft <- mean(df_cdc_height_male$BMXHT) %/% feet_to_cm
+mean_height_rest_in <- round(mean(df_cdc_height_male$BMXHT) %% feet_to_cm / inch_to_cm)
+sd_height_cm <- sqrt(Hmisc::wtd.var(df_cdc_height_male$BMXHT, w = df_cdc_height_male$WTMEC2YR))
+
+
+# Generate distribution
+df_men_dist <- data.frame(
+    x = seq(
+        mean_height_cm - 4 * sd_height_cm, 
+        mean_height_cm + 4 * sd_height_cm,
+        length.out = 100)
+    )
+df_men_dist$y <- dnorm(df_men_dist$x, mean = mean_height_cm, sd = sd_height_cm)
+
+# Split distribution at Brunson's height
+df_men_dist_left <- df_men_dist |> filter(x <= brunson_height)
+df_men_dist_right <- df_men_dist |> filter(x >= brunson_height)
+
+# Add Brunson's height if not exactly part of the 1000 generated values
+y_at_cut <- approx(df_men_dist$x, df_men_dist$y, xout = brunson_height)$y
+df_at_cut <- data.frame(x = brunson_height, y = y_at_cut)
+df_men_dist_left <- bind_rows(df_men_dist_left, df_at_cut)
+df_men_dist_right <- bind_rows(df_at_cut, df_men_dist_right)
 
 ```
 
 
 ```{r echo=FALSE, include=FALSE}
-mean(df_cdc_height_male$BMXHT)
-mean_height_cm <- round(weighted.mean(df_cdc_height_male$BMXHT, w = df_cdc_height_male$WTMEC2YR))
-mean_height_ft <- mean(df_cdc_height_male$BMXHT) %/% feet_to_cm
-mean_height_rest_in <- round(mean(df_cdc_height_male$BMXHT) %% feet_to_cm / inch_to_cm)
-# message(sprintf("%d ft %d in", mean_height_ft, mean_height_rest_in))
 
+# message(sprintf("%d ft %d in", mean_height_ft, mean_height_rest_in))
 
 min(df_cdc_height_male$BMXHT)
 quantile(df_cdc_height_male$BMXHT, probs = c(0.05, 0.5, 0.63, 0.8, 0.9, 0.95, 0.96, 0.97, 0.99))
@@ -173,6 +165,8 @@ sum(df_cdc_height_male$WTMEC2YR)
 min_histo_height <- pmin(min(df_nba_height$height_cm), min(df_cdc_height_male$BMXHT))
 max_histo_height <- pmax(max(df_nba_height$height_cm), max(df_cdc_height_male$BMXHT))
 
+alpha <- 0.5
+peak_y <- 0.055
 
 p_base <- ggplot() +
     scale_y_continuous(
@@ -182,156 +176,40 @@ p_base <- ggplot() +
         aesthetics = c("fill", "color")) +
     coord_cartesian(
         xlim = c(min_histo_height, max_histo_height),
+        ylim = c(0, 0.06),
         clip = "off"
     ) +
+    guides(fill = "none", color = "none") +
     labs(
         x = "Height in cm",
         y = NULL
     )
 
-# p_histo_men <- df_cdc_height_male |> 
-#     ggplot(aes(BMXHT, weight = WTMEC2YR)) +
-#     geom_histogram(
-#         aes(
-#             y = after_stat(density),
-#             fill = BMXHT > brunson_height
-#         ),
-#         binwidth = 2.5,
-#         show.legend = FALSE
-#     ) +
-#     scale_y_continuous(
-#         labels = scales::label_percent(),
-#         expand = expansion(mult = c(0, 0.05))) +
-#     scale_fill_manual(values = c("TRUE" = "#FE4E00ee", "FALSE" = "#FFAE0399")) +
-#     coord_cartesian(
-#         xlim = c(min_histo_height, max_histo_height),
-#         ylim = c(0, 0.15)
-#     ) +
-#     labs(
-#         x = "Height in cm",
-#         y = NULL
-#     )
-
 p_init_brunson <- p_base + 
     annotate(
         "point",
         x = brunson_height,
-        y = 0.055
+        y = peak_y
     ) +
     annotate(
         "segment",
         x = brunson_height,
         xend = brunson_height,
         y = 0, 
-        yend = 0.055,
+        yend = peak_y,
         linetype = "dashed"
     ) +
     annotate(
         "richtext",
         x = brunson_height,
-        y = 0.055,
-        label = "<img src='media/brunson-circle.png' width=70>",
-        vjust = 0,
-        family = "Instrument Sans SemiBold",
-        label.size = 0, fill = NA
-    )
-
-
-p_histo_men <- p_base + 
-    geom_histogram(
-        data = df_cdc_height_male,
-        aes(
-            BMXHT, weight = WTMEC2YR,
-            y = after_stat(density),
-            fill = "FALSE"
-        ),
-        binwidth = 2.5,
-        show.legend = FALSE
-    )
-
-p_histo_men_brunson <- p_base + 
-    geom_histogram(
-        data = df_cdc_height_male,
-        aes(
-            BMXHT, weight = WTMEC2YR,
-            y = after_stat(density),
-            fill = after_stat(x) > brunson_height
-        ),
-        binwidth = 2.5,
-        show.legend = FALSE
-    ) +
-    annotate(
-        "point",
-        x = brunson_height,
-        y = 0.055
-    ) +
-    annotate(
-        "segment",
-        x = brunson_height,
-        xend = brunson_height,
-        y = 0, 
-        yend = 0.055,
-        linetype = "dashed"
-    ) +
-    annotate(
-        "richtext",
-        x = brunson_height,
-        y = 0.055,
+        y = peak_y,
         label = "<img src='media/brunson-circle.png' width=40>",
         vjust = 0,
         family = "Instrument Sans SemiBold",
         label.size = 0, fill = NA
     )
 
-
-p_histo_men_brunson_avg <- p_histo_men_brunson + 
-    annotate(
-        "point",
-        x = mean_height_cm,
-        y = 0.055
-    ) +
-    annotate(
-        "segment",
-        x = mean_height_cm,
-        xend = mean_height_cm,
-        y = 0, 
-        yend = 0.055,
-        linetype = "dashed"
-    ) +
-    annotate(
-        "richtext",
-        x = mean_height_cm,
-        y = 0.055,
-        label = "Average male height in the US",
-        vjust = 0,
-        family = "Instrument Sans SemiBold",
-        label.size = 0, fill = NA
-    ) +
-    annotate(
-        "point",
-        x = brunson_height,
-        y = 0.055
-    ) +
-    annotate(
-        "segment",
-        x = brunson_height,
-        xend = brunson_height,
-        y = 0, 
-        yend = 0.055,
-        linetype = "dashed"
-    ) +
-    annotate(
-        "richtext",
-        x = brunson_height,
-        y = 0.055,
-        label = "<img src='media/brunson-circle.png' width=40>",
-        vjust = 0,
-        family = "Instrument Sans SemiBold",
-        label.size = 0, fill = NA
-    )
-
-
-p_histo_nba <- p_base + 
+p_histo_nba <- p_init_brunson + 
     geom_histogram(
         data = df_nba_height,
         aes(
@@ -342,6 +220,120 @@ p_histo_nba <- p_base +
         binwidth = 2.5,
         show.legend = FALSE
     ) 
+
+
+
+p_dist_men <- p_base + 
+    geom_area(
+        data = df_men_dist,
+        aes(x = x, y = y, fill = "FALSE", col = "FALSE"),
+        alpha = alpha, linewidth = 1
+    ) 
+
+p_dist_men_avg <- p_dist_men + 
+   annotate(
+        "point",
+        x = mean_height_cm,
+        y = peak_y
+    ) +
+    annotate(
+        "segment",
+        x = mean_height_cm,
+        xend = mean_height_cm,
+        y = 0, 
+        yend = peak_y,
+        linetype = "dashed"
+    ) +
+    annotate(
+        "richtext",
+        x = mean_height_cm,
+        y = peak_y,
+        label = "Average male height in the US",
+        vjust = 0,
+        family = "Instrument Sans SemiBold",
+        label.size = 0, fill = NA
+    )
+
+
+p_dist_men_avg_brunson <- p_dist_men_avg + 
+    annotate(
+        "point",
+        x = brunson_height,
+        y = peak_y - 0.01
+    ) +
+    annotate(
+        "segment",
+        x = brunson_height,
+        xend = brunson_height,
+        y = 0, 
+        yend = peak_y - 0.01,
+        linetype = "dashed"
+    ) +
+    annotate(
+        "richtext",
+        x = brunson_height,
+        y = peak_y - 0.01,
+        label = "<img src='media/brunson-circle.png' width=40>",
+        vjust = 0,
+        family = "Instrument Sans SemiBold",
+        label.size = 0, fill = NA
+    )
+
+p_dist_men_avg_brunson_fill <- p_base +
+    geom_area(
+        data = df_men_dist_left,
+        aes(x = x, y = y, fill = "FALSE", col = "FALSE"),
+        alpha = alpha, linewidth = 1
+    ) +
+    geom_area(
+        data = df_men_dist_right,
+        aes(x = x, y = y, fill = "TRUE", col = "TRUE"),
+        alpha = alpha, linewidth = 1
+    ) +
+    annotate(
+        "point",
+        x = brunson_height,
+        y = peak_y - 0.01
+    ) +
+    annotate(
+        "segment",
+        x = brunson_height,
+        xend = brunson_height,
+        y = 0, 
+        yend = peak_y - 0.01,
+        linetype = "dashed"
+    ) +
+    annotate(
+        "richtext",
+        x = brunson_height,
+        y = peak_y - 0.01,
+        label = "<img src='media/brunson-circle.png' width=40>",
+        vjust = 0,
+        family = "Instrument Sans SemiBold",
+        label.size = 0, fill = NA
+    ) +
+    annotate(
+        "point",
+        x = mean_height_cm,
+        y = peak_y
+    ) +
+    annotate(
+        "segment",
+        x = mean_height_cm,
+        xend = mean_height_cm,
+        y = 0, 
+        yend = peak_y,
+        linetype = "dashed"
+    ) +
+    annotate(
+        "richtext",
+        x = mean_height_cm,
+        y = peak_y,
+        label = "Average male height in the US",
+        vjust = 0,
+        family = "Instrument Sans SemiBold",
+        label.size = 0, fill = NA
+    )
 
 ```
 
@@ -364,75 +356,91 @@ p_init_brunson
 ```
 :::
 
-:::{#cr-nba-histo}
+:::{#cr-nba-dist}
 
 ```{r}
 p_histo_nba
 ```
 :::
 
-:::{#cr-men-histo}
+:::{#cr-men-dist}
 ```{r}
-p_histo_men
+p_dist_men
 ```
 :::
 
-:::{#cr-men-histo-brunson}
+:::{#cr-men-dist-avg}
 ```{r}
-p_histo_men_brunson
+p_dist_men_avg
 ```
 :::
 
-:::{#cr-men-histo-brunson-avg}
+:::{#cr-men-dist-avg-brunson}
 ```{r}
-p_histo_men_brunson_avg
+p_dist_men_avg_brunson
 ```
 :::
 
+
+:::{#cr-men-dist-avg-brunson-fill}
+```{r}
+p_dist_men_avg_brunson_fill
+```
+:::
 
 :::{#cr-men-nba-comparison-density}
 ```{r}
-sd_height_cm = sd(df_cdc_height_male$BMXHT)
-
-x <- seq(mean_height_cm - 4 * sd_height_cm, mean_height_cm + 4 * sd_height_cm, length.out = 100)
-y <- dnorm(x, mean = 175, sd = sd_height_cm)
-df <- data.frame(x = x, y = y)
-
-
 p_base + 
     geom_area(
-        data = df,
+        data = df_men_dist,
         aes(x = x, y = y, fill = "FALSE", col = "FALSE"),
-        alpha = 0.4, linewidth = 1
+        alpha = alpha, linewidth = 1
     ) +
     annotate(
         "point",
         x = brunson_height,
-        y = 0.04
+        y = peak_y - 0.01
     ) +
     annotate(
         "segment",
         x = brunson_height,
         xend = brunson_height,
         y = 0, 
-        yend = 0.04,
+        yend = peak_y - 0.01,
         linetype = "dashed"
     ) +
     annotate(
         "richtext",
         x = brunson_height,
-        y = 0.04,
+        y = peak_y - 0.01,
         label = "<img src='media/brunson-circle.png' width=40>",
         vjust = 0,
         family = "Instrument Sans SemiBold",
         label.size = 0, fill = NA
     ) +
-    coord_cartesian(
-        xlim = c(min_histo_height, max_histo_height),
-        clip = "off") +
-    guides(fill = "none", color = "none") +
-    theme(
-        # axis.text.y = element_blank()
+    geom_histogram(
+        data = df_nba_height,
+        aes(
+            x = height_cm,
+            y = after_stat(density),
+            fill = after_stat(x) > brunson_height
+        ),
+        binwidth = 2.5, alpha = alpha * 0.8,
+        show.legend = FALSE
+    ) +
+    annotate(
+        "text",
+        x = 210, y = 0.05, 
+        label = "NBA\nplayers",
+        family = "Instrument Sans Italic",
+        hjust = 0, vjust = 0.5, lineheight = 0.9
+    ) +
+    annotate(
+        GeomCurve,
+        x = 209, xend = 202,
+        y = 0.05, yend = 0.045,
+        arrow = arrow(angle = 25, length = unit(2.5, "mm"), type = "closed"),
+        curvature = 0.3, linewidth = 0.2
     )
 
 ```
@@ -442,30 +450,26 @@ p_base +
 
 
 
-@cr-wsj But the standfirst of this [Wall Street Journal article](https://www.wsj.com/sports/basketball/jalen-brunson-new-york-knicks-nba-finals-ac6b287d?st=LPtr5c) struck me. 
+@cr-wsj But one phrase in the standfirst of this [Wall Street Journal article](https://www.wsj.com/sports/basketball/jalen-brunson-new-york-knicks-nba-finals-ac6b287d?st=LPtr5c) struck me. 
 
 @cr-wsj-highlighted Brunson, an <em class="highlighted-text highlighted-text-orange-border">undersized superstar?</em>
 
 @cr-init-brunson According to official NBA figures, Jalen Brunson is 6 ft 2" / 188 cm tall.
 
-@cr-nba-histo In the NBA, where the average player is `r round(mean(df_nba_height$height_cm))` cm tall, he often appears small. In fact, only `r smaller_than_brunson` NBA players in the 2025-26 NBA regular season are <em class="highlighted-text highlighted-text-yellow">shorter than him</em>.
+@cr-nba-dist In the NBA, where the average player is `r round(mean(df_nba_height$height_cm))` cm tall, he often appears small. In fact, only `r smaller_than_brunson` NBA players in the 2025-26 NBA regular season are <em class="highlighted-text highlighted-text-yellow">shorter than him</em>.
 
 On the other hand, the vast majority, `r round(taller_than_brunson / nrow(df_nba_height) * 100)` %, is <em class="highlighted-text highlighted-text-orange">taller than Brunson</em>.
 
 Stephen Curry, Ja Morant, Trae Young, Tyrese Maxex and 
 `r nrow(df_nba_height[df_nba_height$height_cm == 188,] ) - 4` other players are also 6 ft 2".
 
-@cr-men-histo But among men in the US?
+@cr-men-dist But among men in the US?
 
-The average standing height is 5 ft 9" or 175 cm.
+@cr-men-dist-avg The average standing height is 5 ft 9" or 175 cm.
 
-@cr-men-histo-brunson Which places Brunson in the<br><em class="highlighted-text highlighted-text-orange">96th percentile</em>.<br><br>Only 4 % of male adults in the U.S. are taller than him.
+@cr-men-dist-avg-brunson-fill Which places Brunson in the<br><em class="highlighted-text highlighted-text-orange">96th percentile</em>.<br><br>Only 4 % of male adults in the U.S. are taller than him. He is <em>`r brunson_height - round(weighted.mean(df_cdc_height_male$BMXHT, w = df_cdc_height_male$WTMEC2YR))` cm taller then the average</em> American male adult.
 
-@cr-men-histo-brunson-avg He is <em>`r brunson_height - round(weighted.mean(df_cdc_height_male$BMXHT, w = df_cdc_height_male$WTMEC2YR))` cm taller then the average</em> American male adult.
-
-Remember, at the same time he is <em>`r round(mean(df_nba_height$height_cm)) - brunson_height` cm smaller than the average NBA player</em>.
-
-@cr-men-nba-comparison-density
+@cr-men-nba-comparison-density Remember, at the same time he is <em>`r round(mean(df_nba_height$height_cm)) - brunson_height` cm smaller than the average NBA player</em>.
 
 :::
 

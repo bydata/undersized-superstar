@@ -16,7 +16,7 @@ h1 {
 }
 
 p {
-    font-size: 1.1em;
+    font-size: 1.15em;
 }
 
 em {
@@ -78,4 +78,8 @@ em {
     height: auto;
     border-radius: 8px;
     object-fit: cover;
+}
+
+p > a {
+  color: var(--color-orange)
 }
