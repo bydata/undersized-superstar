@@ -90,6 +90,9 @@ smaller_than_brunson <- df_nba_height |>
 taller_than_brunson <- df_nba_height |> 
     filter(height_cm > brunson_height) |>
     nrow()
+same_size_as_brunson <- df_nba_height |> 
+    filter(height_cm == brunson_height) |>
+    nrow()
 
 ```
 
@@ -446,9 +449,49 @@ p_base +
 ```
 :::
 
+:::{#cr-nba-finals}
+```{r nba-finals-starting-lineups}
+
+starting_lineups <- list(
+    "Knicks" = c("Jalen Brunson", "Josh Hart", "Mikal Bridges", "OG Anunoby", "Karl-Anthony Towns"),
+    "Spurs" = c("De'Aaron Fox", "Stephon Castle", "Devin Vassell", "Julian Champagnie", "Victor Wembanyama")
+)
+
+df_nba_finals_lineup <- df_nba_height |> 
+    filter(Player %in% reduce(starting_lineups, c))
+
+df_nba_finals_lineup |> 
+    ggplot(aes(height_cm, y = 1)) +
+    ggdist::geom_swarm(
+        aes(fill = Team, group = 1), 
+        shape = 21, color = "grey2", linewidth = 0.25, dotsize = 3, 
+        alpha = 0.9
+    ) +
+    annotate(
+        "richtext",
+        x = brunson_height,
+        y = 1,
+        label = "<img src='media/brunson-circle.png' width=20>",
+        vjust = 0.5,
+        family = "Instrument Sans SemiBold",
+        label.size = 0, fill = NA
+    ) +
+    scale_fill_manual(values = c("NYK" = "#006BB6", "SAS" = "#c4ced4")) +
+    coord_cartesian(ylim = c(0.8, 1.8)) +
+    guides(fill = guide_legend(override.aes = list("size" = 3))) +
+    theme(
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid.major.x = element_line(),
+        panel.grid.major.y = element_blank(),
+        legend.position = "inside",
+        legend.position.inside = c(0.8, 0.6),
+        legend.background = element_rect(color = NA, fill = "white")
+    )
 
 
-
+```
+:::
 
 @cr-wsj But one phrase in the standfirst of this [Wall Street Journal article](https://www.wsj.com/sports/basketball/jalen-brunson-new-york-knicks-nba-finals-ac6b287d?st=LPtr5c) struck me. 
 
@@ -456,7 +499,7 @@ p_base +
 
 @cr-init-brunson According to official NBA figures, Jalen Brunson is 6 ft 2" / 188 cm tall.
 
-@cr-nba-dist In the NBA, where the average player is `r round(mean(df_nba_height$height_cm))` cm tall, he often appears small. In fact, only `r smaller_than_brunson` NBA players in the 2025-26 NBA regular season are <em class="highlighted-text highlighted-text-yellow">shorter than him</em>.
+@cr-nba-dist In the NBA, where the average player is `r round(mean(df_nba_height$height_cm))` cm tall, he often appears small. In fact, only `r smaller_than_brunson` NBA players in the 2025-26 NBA regular season are <em class="highlighted-text highlighted-text-yellow">shorter than him</em> and `r same_size_as_brunson` players have the <em class="highlighted-text highlighted-text-yellow">same size</em>.
 
 On the other hand, the vast majority, `r round(taller_than_brunson / nrow(df_nba_height) * 100)` %, is <em class="highlighted-text highlighted-text-orange">taller than Brunson</em>.
 
@@ -471,11 +514,17 @@ Stephen Curry, Ja Morant, Trae Young, Tyrese Maxex and
 
 @cr-men-nba-comparison-density Remember, at the same time he is <em>`r round(mean(df_nba_height$height_cm)) - brunson_height` cm smaller than the average NBA player</em>.
 
+@cr-nba-finals In Game 5 of the 2026 NBA Finals, he was the shortest player in the Knicks and Spurs starting line-ups.<br><br>Yet, he turned out to be the most influential player of the deciding game.
+
 :::
+
+
+
 
 
 ### Sources
 
-* NBA players: NBA.com (as of 2026-06-14)
+* NBA players: [NBA.com](https://www.nba.com/players) (as of 2026-06-14)
 * US male standing height: NHANES 2021-23 [Examination Data](https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Examination&Cycle=2021-2023) and [Demographics](https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Demographics&Cycle=2021-2023)
+* Starting line-ups Game 5 of NBA finals 2026: [NBA.com](https://www.nba.com/news/live-updates-2026-nba-finals-game-5-knicks-seek-first-title-since-1973)
 * Photo Jalen Brunson: Erik Drost, CC BY 2.0 (via [Wikipedia](https://de.wikipedia.org/wiki/Jalen_Brunson#/media/Datei:Jalen_Brunson_2023_(cropped).jpg))
