@@ -342,11 +342,11 @@ p_dist_men_avg_brunson_fill <- p_base +
 ```
 
 :::{#cr-wsj}
-<img src="media/wsj.png" width="500" />
+<img src="media/wsj.png" width="660" />
 :::
 
 :::{#cr-wsj-highlighted}
-<img src="media/wsj-highlighted.png" width="500" />
+<img src="media/wsj-highlighted.png" width="660" />
 :::
 
 :::{#cr-hero-image}
@@ -480,6 +480,7 @@ df_nba_finals_lineup |>
     scale_fill_manual(values = c("NYK" = "#006BB6", "SAS" = "#c4ced4")) +
     coord_cartesian(ylim = c(0.8, 1.8)) +
     guides(fill = guide_legend(override.aes = list("size" = 3))) +
+    labs(x = "Height in cm") +
     theme(
         axis.title.y = element_blank(),
         axis.text.y = element_blank(),
