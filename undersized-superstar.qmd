@@ -427,7 +427,7 @@ p_base +
         aes(
             x = height_cm,
             y = after_stat(density),
-            fill = after_stat(x) > brunson_height
+            fill = "TRUE"
         ),
         binwidth = 2.5, alpha = alpha * 0.8,
         show.legend = FALSE
