@@ -91,21 +91,4 @@ p > a {
   p {
     font-size: 1.4em;
   }
-
-  .container {
-    flex-direction: column;
-    padding: 20px;
-    gap: 20px;
-  }
-
-  .text-column,
-  .image-column {
-    flex: none;
-    width: 100%;
-  }
-
-  .image-column img {
-    width: 100%;
-    max-width: 100%;
-  }
 }
