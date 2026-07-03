@@ -13,6 +13,10 @@ format:
     cr-style:
       narrative-font-family: "Instrument Sans"
       section-background-color: "#FFFFFF"
+      narrative-text-color-overlay: "black"
+      narrative-background-color-overlay: "#FFFFFFF2"
+      --cr-narrative-overlay-max-width: 600px
+      narrative-border-radius: 5px
     include-in-header:
         text: |
             <link rel="icon" type="image/x-icon" href="media/logo.png">
