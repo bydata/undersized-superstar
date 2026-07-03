@@ -46,7 +46,10 @@ library(Hmisc)
 ```{r theme}
 
 custom_theme <- function() {
-    theme_minimal(base_family = "Instrument Sans", paper = "white", ink = "grey30") +
+    theme_minimal(
+        base_family = "Instrument Sans", 
+        base_size = 14,
+        paper = "white", ink = "grey30") +
         theme(
             plot.title = element_text(color = "black"),
             panel.grid.major.x = element_blank(),
