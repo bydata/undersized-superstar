@@ -48,6 +48,7 @@ em {
 
 #intro {
   grid-column: page-start / page-end;
+  width: 100%
 }
 
 /* Container Layout */
