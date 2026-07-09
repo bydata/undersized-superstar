@@ -45,6 +45,11 @@ em {
   border: 2px solid var(--color-orange); 
 }
 
+
+#intro {
+  grid-column: page-start / page-end;
+}
+
 /* Container Layout */
 .container {
     display: flex;
