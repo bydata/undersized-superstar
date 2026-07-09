@@ -13,6 +13,7 @@ body {
 
 h1 {
     font-family: 'Instrument Serif', serif;
+    font-size: 3em
 }
 
 p {
@@ -42,11 +43,6 @@ em {
 .highlighted-text-orange-border {
   color: var(--color-text);
   border: 2px solid var(--color-orange); 
-}
-
-
-#quarto-document-content > p:nth-child(3) {
-    width: 80%
 }
 
 /* Container Layout */
