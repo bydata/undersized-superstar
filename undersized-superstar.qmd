@@ -23,9 +23,15 @@ format:
 
 ---
 
-:::{#intro .column-page}
+:::{.container}
+:::{.text-column}
 Jalen Brunson was the engine of the Knicks' historic 2026 championship run, earning NBA Finals MVP honors while leading the postseason in total scoring with 28.4 points per game. In the decisive Game 5, he score 45 points in total and scoring 13 straight in the fourth quarter to rally the Knicks from a double-digit deficit and secure their first title in 53 years.
 :::
+:::{.image-column}
+<img src="media/brunson-free.png" alt="Jalen Brunson, a basketball professional, in a NY Knicks jersey">
+:::
+:::
+
 
 ```{r setup}
 library(tidyverse)
@@ -41,7 +47,7 @@ library(Hmisc)
 custom_theme <- function() {
     theme_minimal(
         base_family = "Instrument Sans", 
-        base_size = 14,
+        base_size = 18,
         paper = "white", ink = "grey30") +
         theme(
             plot.title = element_text(color = "black"),
