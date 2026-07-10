@@ -342,11 +342,11 @@ p_dist_men_avg_brunson_fill <- p_base +
 ```
 
 :::{#cr-wsj}
-<img src="media/wsj.png" width="660" />
+<img src="media/wsj.png" width="100%" />
 :::
 
 :::{#cr-wsj-highlighted}
-<img src="media/wsj-highlighted.png" width="660" />
+<img src="media/wsj-highlighted.png" width="100%" />
 :::
 
 :::{#cr-hero-image}
